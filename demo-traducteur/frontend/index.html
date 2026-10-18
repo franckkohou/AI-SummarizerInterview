@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Traducteur IA</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; padding: 32px 16px; font-family: Arial, sans-serif; background: #f2f5f9; color: #172334; }
+    .card { margin: 0 auto; max-width: 680px; background: white; padding: 28px; border-radius: 14px; box-shadow: 0 6px 25px #1a294018; }
+    label { display: block; margin: 18px 0 8px; font-weight: bold; }
+    textarea, select { width: 100%; padding: 12px; border: 1px solid #b7c2d0; border-radius: 8px; font: inherit; }
+    button { margin-top: 14px; padding: 12px 22px; background: #1953be; color: white; border: 0; border-radius: 8px; font-weight: bold; cursor: pointer; }
+    button:disabled { opacity: .6; cursor: wait; }
+    #resultat { min-height: 75px; background: #f3f6fc; padding: 15px; border-radius: 8px; white-space: pre-wrap; }
+    .erreur { color: #b3261e; }
+  </style>
+</head>
+<body>
+  <main class="card">
+    <h1>Traducteur IA</h1>
+    <label for="texte">Votre texte</label>
+    <textarea id="texte" rows="6" placeholder="Saisissez un texte..."></textarea>
+    <label for="langue">Traduire en</label>
+    <select id="langue">
+      <option>anglais</option>
+      <option>espagnol</option>
+      <option>allemand</option>
+      <option>italien</option>
+    </select>
+    <button id="bouton">Traduire</button>
+    <p id="statut" role="status"></p>
+    <h2>Traduction</h2>
+    <div id="resultat" aria-live="polite">La traduction apparaîtra ici.</div>
+  </main>
+  <script>
+    const bouton = document.getElementById("bouton");
+    const statut = document.getElementById("statut");
+    const resultat = document.getElementById("resultat");
+
+    bouton.addEventListener("click", async () => {
+      const texte = document.getElementById("texte").value.trim();
+      const langue = document.getElementById("langue").value;
+      if (!texte) {
+        resultat.textContent = "Saisissez d'abord un texte.";
+        return;
+      }
+
+      bouton.disabled = true;
+      statut.textContent = "Traduction en cours...";
+      statut.classList.remove("erreur");
+
+      try {
+        const reponse = await fetch("/api/translate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text: texte, language: langue }),
+        });
+        const data = await reponse.json();
+        if (!reponse.ok) {
+          throw new Error(data.detail || `HTTP ${reponse.status}`);
+        }
+        resultat.textContent = data.translation;
+        statut.textContent = "";
+      } catch (erreur) {
+        console.error(erreur);
+        statut.textContent = "Une erreur est survenue. Réessayez.";
+        statut.classList.add("erreur");
+      } finally {
+        bouton.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>
